@@ -41,8 +41,11 @@ npm run build   # output ke dist/
 
 ## skor
 
-- lighthouse: (isi setelah ukur di url live)
-- qa.js: (isi setelah jalan)
+- live: https://kayzenn123.github.io/agent-tools-bidkit/ (http 200, md5 sama dengan dist lokal, pages status built)
+- qa.js lokal: exit 0 — 0 overflow, 0 console error, 0 tap target kecil, 0 img tanpa alt, 0 input tanpa label, h1 = 1, lang id; fps 4x cpu throttle: 59,8; reduced-motion: 0 animasi berjalan
+- tes fungsi: 14/14 lulus (deep-link, kalkulator fee 12%, verdict budget, checklist + localstorage, tab kategori, salin proposal, refresh bertahan)
+- lighthouse: BELUM TERVERIFIKASI — chrome tidak bisa launch di vm (2x percobaan: default + chrome-path playwright). qa.js (chromium playwright) jalan normal; skor lighthouse jangan dikarang.
+- vercel: BELUM — mcp create_git_project 403 (scope kayzenn123s-projects belum di-grant ke koneksi ini). butuh user grant akses tim di vercel, lalu repo ini bisa di-link. deploy sementara via github pages (repo baru, project baru).
 
 ## lisensi
 

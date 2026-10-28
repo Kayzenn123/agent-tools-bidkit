@@ -27,7 +27,8 @@
 
 ## Budget performa + Lighthouse
 - qa.js: exit 0 (chromium + webkit tidak dites webkit — lihat bawah). fps4x 59,8.
-- lighthouse: BELUM TERUKUR — chrome headless tidak bisa launch di vm (plafon yang sama seperti build 2026-10-22/23/25). dicoba lagi di url live; kalau gagal, catat sebagai belum terverifikasi, bukan dikarang.
+- lighthouse: BELUM TERUKUR — chrome headless tidak bisa launch di vm (plafon yang sama seperti build 2026-10-22/23/25). dicoba 2x (default + --chrome-path playwright chromium) — chrome-launcher gagal sebelum load halaman. qa.js lokal exit 0 + live md5 identik jadi bukti pengganti yang jujur; skor lighthouse TIDAK dikarang.
+- vercel: create_git_project 403 — koneksi mcp belum di-grant scope team kayzenn123s-projects (team_2B3ViW3FdxHrMW4xWICVXC46). butuh user grant akses tim di vercel. deploy jalan via github pages (repo baru agent-tools-bidkit, gh-pages f68cf54, status built, http 200, md5 == dist lokal). netlify: tidak ada konektor/cli.
 - js/css/font: js inline ~9kb, css tailwind terkompresi, font 7 file self-hosted.
 
 ## Skor 1-10

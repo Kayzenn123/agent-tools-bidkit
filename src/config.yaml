@@ -1,6 +1,6 @@
 site:
   name: bidkit
-  site: 'https://agent-tools-bidkit.vercel.app'
+  site: 'https://kayzenn123.github.io/agent-tools-bidkit/'
   base: '/'
   trailingSlash: false
 
