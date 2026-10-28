@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://agent-tools-bidkit.vercel.app/sitemap-index.xml
+Sitemap: https://kayzenn123.github.io/sitemap-index.xml
