@@ -1,0 +1,852 @@
+---
+import Layout from '~/layouts/Layout.astro';
+import StructuredData from '~/components/common/StructuredData.astro';
+import { Icon } from 'astro-icon/components';
+import { SITE } from 'astrowind:config';
+
+const metadata = {
+  title: 'bidkit — kios penawaran freelance',
+  description:
+    'template proposal bid freelance, kalkulator harga bersih, dan checklist portofolio — buat freelancer projects.co.id dan sribu. nego dulu, jangan asal bid.',
+  ignoreTitleTemplate: true,
+};
+
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${SITE?.site}/#website`,
+    name: 'bidkit',
+    url: SITE?.site,
+    inLanguage: 'id',
+    description: metadata.description,
+  },
+];
+
+// ---- data template: 9 template (3 kategori x 3 gaya) ----
+// struktur tiap proposal ikut contoh rfp nyata projects.co.id:
+// paham brief + solusi + lingkup + estimasi waktu + pengalaman + biaya + tahapan bayar.
+const TEMPLATES = [
+  {
+    id: 'ui-sopan',
+    cat: 'ui/ux',
+    gaya: 'sopan',
+    judul: 'ui/ux — sopan & rapi',
+    deskripsi: 'salam hangat, paham brief dulu, baru tawar solusi. cocok buat klien perusahaan.',
+    body: 'halo kak, saya {nama}, desainer ui/ux {pengalaman} tahun.\n\nsaya sudah baca briefnya dan paham kebutuhannya: {catatan}\n\nsolusi yang saya tawarkan:\n- riset singkat pengguna & kompetitor sebelum desain\n- wireframe lalu ui final yang konsisten, siap handoff ke developer\n- 2x revisi mayor, revisi minor menyesuaikan\n\nlingkup: {keahlian}\nestimasi pengerjaan: {durasi} hari kerja\nbiaya: rp{harga} (termasuk fee platform, pembayaran bertahap)\n\nportofolio sejenis: {portofolio}\n\nboleh saya kirim contoh wireframe awal dulu biar kakak lihat arahnya? terima kasih.',
+  },
+  {
+    id: 'ui-cepat',
+    cat: 'ui/ux',
+    gaya: 'to-the-point',
+    judul: 'ui/ux — to-the-point',
+    deskripsi: 'langsung ke inti: apa yang dikerjakan, berapa hari, berapa rupiah. tanpa basa-basi.',
+    body: 'halo, saya {nama} — ui/ux {pengalaman} tahun.\n\nsaya kerjakan: {keahlian}\nwaktu: {durasi} hari kerja\nharga: rp{harga}\n\nproses: wireframe (hari 1–2) → ui final → handoff figma rapi.\nrevisi: 2x mayor.\n\nportofolio: {portofolio}\n\ncatatan: {catatan}\n\nkalau cocok, saya mulai hari ini.',
+  },
+  {
+    id: 'ui-portofolio',
+    cat: 'ui/ux',
+    gaya: 'portofolio-dulu',
+    judul: 'ui/ux — portofolio dulu',
+    deskripsi: 'buka dengan karya, bukan janji. cocok kalau portofoliomu kuat.',
+    body: 'halo kak, sebelum panjang lebar, ini karya saya yang paling mirip brief kakak: {portofolio}\n\nsaya {nama}, ui/ux {pengalaman} tahun, fokus di {keahlian}.\n\nbuat brief ini saya akan: {catatan}\n\nwaktu pengerjaan {durasi} hari, biaya rp{harga}, 2x revisi mayor.\n\nsilakan cek dulu portofolionya — kalau arahnya cocok, kita lanjut ke detail.',
+  },
+  {
+    id: 'web-sopan',
+    cat: 'web dev',
+    gaya: 'sopan',
+    judul: 'web dev — sopan & rapi',
+    deskripsi: 'jelaskan arsitektur & tahapan kerja. cocok buat proyek web perusahaan.',
+    body: 'halo kak, saya {nama}, web developer {pengalaman} tahun.\n\nsaya paham kebutuhannya: {catatan}\n\nrencana kerja saya:\n1. analisis & struktur halaman\n2. development (frontend + integrasi)\n3. testing di berbagai perangkat\n4. deploy & serah terima\n\nteknologi: {keahlian}\nestimasi: {durasi} hari kerja\nbiaya: rp{harga}, pembayaran bertahap per milestone\n\nportofolio sejenis: {portofolio}\n\nsaya siap diskusi dulu sebelum mulai, gratis. terima kasih.',
+  },
+  {
+    id: 'web-cepat',
+    cat: 'web dev',
+    gaya: 'to-the-point',
+    judul: 'web dev — to-the-point',
+    deskripsi: 'stack, waktu, harga. tiga baris pertama sudah cukup buat klien mutusin.',
+    body: 'halo, saya {nama} — web dev {pengalaman} tahun.\n\nstack: {keahlian}\nwaktu: {durasi} hari kerja\nharga: rp{harga}\n\ntahapan: analisis → build → testing → deploy.\nrevisi: 2x mayor, bugfix 7 hari setelah serah terima.\n\nportofolio: {portofolio}\n\ncatatan: {catatan}\n\nsiap mulai kapan saja.',
+  },
+  {
+    id: 'web-portofolio',
+    cat: 'web dev',
+    gaya: 'portofolio-dulu',
+    judul: 'web dev — portofolio dulu',
+    deskripsi: 'tunjukkan website yang sudah live dulu, baru ngomong harga.',
+    body: 'halo kak, ini website yang pernah saya buat dan masih live: {portofolio}\n\nsaya {nama}, web dev {pengalaman} tahun, spesialis {keahlian}.\n\nbuat brief kakak: {catatan}\n\nestimasi {durasi} hari, biaya rp{harga}, termasuk testing & deploy.\n\ncoba buka dulu link di atas — kalau kualitasnya cocok, kita lanjut.',
+  },
+  {
+    id: 'desain-sopan',
+    cat: 'desain grafis',
+    gaya: 'sopan',
+    judul: 'desain grafis — sopan & rapi',
+    deskripsi: 'logo, feed, company profile — dengan proses revisi yang jelas.',
+    body: 'halo kak, saya {nama}, desainer grafis {pengalaman} tahun.\n\nsaya paham briefnya: {catatan}\n\nproses saya:\n- 2–3 arah konsep awal\n- 1 konsep dipilih, dikembangkan sampai final\n- file lengkap (png, jpg, pdf, sumber editable)\n\nlingkup: {keahlian}\nwaktu: {durasi} hari kerja\nbiaya: rp{harga}\n\nportofolio: {portofolio}\n\nterima kasih, saya tunggu kabarnya.',
+  },
+  {
+    id: 'desain-cepat',
+    cat: 'desain grafis',
+    gaya: 'to-the-point',
+    judul: 'desain grafis — to-the-point',
+    deskripsi: 'buat klien yang buru-buru: harga, waktu, jumlah revisi, selesai.',
+    body: 'halo, saya {nama} — desainer grafis {pengalaman} tahun.\n\nsaya kerjakan: {keahlian}\nwaktu: {durasi} hari kerja\nharga: rp{harga}\n\ntermasuk: 2 arah konsep, 2x revisi mayor, file png/jpg/pdf + sumber.\n\nportofolio: {portofolio}\n\ncatatan: {catatan}\n\norder hari ini, mulai hari ini juga.',
+  },
+  {
+    id: 'desain-portofolio',
+    cat: 'desain grafis',
+    gaya: 'portofolio-dulu',
+    judul: 'desain grafis — portofolio dulu',
+    deskripsi: 'karya bicara duluan. cocok buat kontes sribu & klien visual.',
+    body: 'halo kak, ini karya saya yang paling mirip briefnya: {portofolio}\n\nsaya {nama}, desainer grafis {pengalaman} tahun, fokus {keahlian}.\n\nbuat brief ini: {catatan}\n\nwaktu {durasi} hari, biaya rp{harga}, 2 arah konsep + 2x revisi.\n\nkalau gayanya cocok, saya kirim konsep pertama dalam 2 hari.',
+  },
+];
+
+const CATS = [
+  { id: 'ui/ux', label: 'ui/ux' },
+  { id: 'web dev', label: 'web dev' },
+  { id: 'desain grafis', label: 'desain grafis' },
+];
+
+const CHECKLIST = [
+  'portofolio online yang bisa dibuka tanpa login',
+  '3 karya terbaik ditaruh paling atas',
+  'tiap karya ada deskripsi singkat: masalah, peran, hasil',
+  'testimoni 2 klien (nama + hasil kerja)',
+  'harga paket jelas (mulai dari rp...)',
+  'foto profil asli, bukan avatar default',
+  'bio 2 kalimat: siapa kamu, spesialisasi apa',
+  'kontak whatsapp aktif di bio',
+  'cv pdf 1 halaman, siap unduh',
+  'akun projects.co.id / sribu sudah terverifikasi',
+  'karya terbaru kurang dari 6 bulan',
+  'niche jelas — jangan semua bisa, pilih 1–2',
+];
+
+const FAQS = [
+  {
+    q: 'fee projects.co.id berapa?',
+    a: '12% dari harga project, dibebankan ke worker/freelancer. bid-nya gratis dan tertutup — freelancer lain tidak bisa lihat penawaranmu. contoh: project rp1.000.000, fee rp120.000, kamu terima rp880.000 (sebelum pajak & biaya transfer). sumber: syarat layanan projects.co.id.',
+  },
+  {
+    q: 'gimana sistem escrow-nya?',
+    a: 'owner transfer dulu ke rekening escrow projects.co.id, kamu kerjakan, upload hasil, baru dibayar setelah pekerjaan selesai. kalau kamu gagal menyelesaikan, uang kembali ke owner. sumber: faq umum projects.co.id.',
+  },
+  {
+    q: 'kontes sribu jalannya gimana?',
+    a: 'klien submit brief, banyak desainer submit konsep, klien pilih 1 pemenang. kontes berjalan 7 hari dan pemenang wajib ditetapkan maks. 1 minggu setelah kontes berakhir. kalau kontes menghasilkan kurang dari 15 desain dan tidak ada yang disukai, klien berhak refund penuh. sumber: syarat & ketentuan sribu.',
+  },
+  {
+    q: 'penarikan dana projects.co.id kena biaya?',
+    a: 'gratis untuk bca, bni, dan mandiri; rp7.500 untuk bank lain. maks. penarikan rp100.000.000 per penarikan. sumber: syarat layanan projects.co.id.',
+  },
+  {
+    q: 'fee sribu berapa persen?',
+    a: 'tidak dipublikasi di syarat & ketentuan resmi sribu — yang tertulis hanya pemenang dibayar sejumlah "biaya desainer". karena itu kalkulator di atas minta kamu isi sendiri persentasenya. jangan percaya angka blog tanpa sumber resmi.',
+  },
+];
+---
+
+<Layout metadata={metadata}>
+  <StructuredData slot="head" schema={structuredData} />
+  <style>
+    :root {
+      --bk-bg: #f6f1fb;
+      --bk-surface: #fffdf9;
+      --bk-ink: #241a33;
+      --bk-muted: #6b5a80;
+      --bk-accent: #c2410c;
+      --bk-accent-soft: #fdeee3;
+      --bk-accent2: #4d7c0f;
+      --bk-pop: #f5c518;
+      --bk-line: #241a33;
+    }
+    html[data-theme='lime'] {
+      --bk-accent: #4d7c0f;
+      --bk-accent-soft: #f0f7e0;
+    }
+    html[data-theme='plum'] {
+      --bk-accent: #6b21a8;
+      --bk-accent-soft: #f1e6fb;
+    }
+    body {
+      background: var(--bk-bg);
+      color: var(--bk-ink);
+      font-family: var(--font-body);
+    }
+    h1, h2, h3, .bk-label, button, .bk-lower { text-transform: lowercase; }
+    .font-display { font-family: var(--font-display); }
+    .font-accent { font-family: var(--font-accent); }
+    .bk-card {
+      background: var(--bk-surface);
+      border: 2px dashed var(--bk-line);
+      border-radius: 0;
+    }
+    .bk-btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--bk-accent); color: #fff;
+      border: 2px solid var(--bk-ink);
+      padding: 0.8rem 1.3rem; font-weight: 700; font-size: 1rem;
+      min-height: 48px; cursor: pointer; text-transform: lowercase;
+      box-shadow: 4px 4px 0 var(--bk-ink);
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+    .bk-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--bk-ink); }
+    .bk-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--bk-ink); }
+    .bk-btn.secondary { background: var(--bk-surface); color: var(--bk-ink); }
+    .bk-btn:focus-visible, a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+      outline: 3px solid var(--bk-accent); outline-offset: 2px;
+    }
+    .bk-input {
+      width: 100%; background: #fff; border: 2px solid var(--bk-ink);
+      padding: 0.7rem 0.8rem; font-size: 16px; font-family: var(--font-body);
+      border-radius: 0; color: var(--bk-ink);
+    }
+    .bk-input::placeholder { color: #8a7ba3; }
+    .bk-tab {
+      border: 2px dashed var(--bk-line); background: var(--bk-surface);
+      padding: 0.6rem 1rem; font-weight: 700; cursor: pointer; min-height: 44px;
+    }
+    .bk-tab[aria-selected='true'] { background: var(--bk-accent); color: #fff; border-style: solid; }
+    .bk-marquee { overflow: hidden; white-space: nowrap; border-top: 2px solid var(--bk-ink); border-bottom: 2px solid var(--bk-ink); }
+    .bk-marquee-track { display: inline-flex; gap: 0; will-change: transform; animation: bk-scroll 28s linear infinite; }
+    .bk-marquee-track.rev { animation-direction: reverse; }
+    .bk-marquee-track.fast { animation-duration: 18s; }
+    @keyframes bk-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .bk-word span {
+      display: inline-block;
+      animation: bk-flip 900ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+    }
+    @keyframes bk-flip { from { transform: rotateX(90deg) translateY(40px); opacity: 0; } to { transform: rotateX(0) translateY(0); opacity: 1; } }
+    .bk-stamp {
+      animation: bk-spin 14s linear infinite;
+    }
+    @keyframes bk-spin { to { transform: rotate(360deg); } }
+    .bk-noise {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+    .bk-reveal { clip-path: circle(0% at 50% 0%); transition: clip-path 700ms ease; }
+    .bk-reveal.in { clip-path: circle(150% at 50% 0%); }
+    .bk-fall { display: inline-block; animation: bk-fall 600ms cubic-bezier(0.3, 1.4, 0.4, 1) both; }
+    @keyframes bk-fall { from { transform: translateY(-32px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .bk-ticket { clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), 96% 100%, 92% calc(100% - 10px), 88% 100%, 84% calc(100% - 10px), 80% 100%, 76% calc(100% - 10px), 72% 100%, 68% calc(100% - 10px), 64% 100%, 60% calc(100% - 10px), 56% 100%, 52% calc(100% - 10px), 48% 100%, 44% calc(100% - 10px), 40% 100%, 36% calc(100% - 10px), 32% 100%, 28% calc(100% - 10px), 24% 100%, 20% calc(100% - 10px), 16% 100%, 12% calc(100% - 10px), 8% 100%, 4% calc(100% - 10px), 0 100%); }
+    .bk-skip { position: absolute; left: -9999px; top: 0; background: var(--bk-accent); color: #fff; padding: 0.7rem 1rem; z-index: 50; }
+    .bk-skip:focus { left: 0.5rem; top: 0.5rem; }
+    .bk-check-box svg { opacity: 0; }
+    .check-item:checked + .bk-check-box { background: var(--bk-accent); }
+    .check-item:checked + .bk-check-box svg { opacity: 1; }
+    .check-item:focus-visible + .bk-check-box { outline: 3px solid var(--bk-accent); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      .bk-marquee-track, .bk-word span, .bk-stamp, .bk-fall { animation: none !important; }
+      .bk-reveal { clip-path: none !important; transition: none !important; }
+    }
+    html[data-motion='off'] .bk-marquee-track, html[data-motion='off'] .bk-word span, html[data-motion='off'] .bk-stamp, html[data-motion='off'] .bk-fall { animation: none !important; }
+    html[data-motion='off'] .bk-reveal { clip-path: none !important; transition: none !important; }
+  </style>
+
+  <a class="bk-skip" href="#kios">lompat ke kios</a>
+
+  <!-- bar atas: minimal, bukan navbar marketing -->
+  <header class="w-full border-b-2 border-dashed" style="border-color: var(--bk-line); background: var(--bk-surface);">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
+      <a href="#atas" class="font-display text-3xl leading-none inline-flex items-center min-h-[44px] py-2" style="color: var(--bk-accent);" aria-label="bidkit — kembali ke atas">bidkit</a>
+      <nav class="flex flex-wrap items-center gap-2 text-sm font-bold" aria-label="navigasi kios">
+        <a class="px-3 py-2 min-h-[44px] inline-flex items-center" href="#kios">kios</a>
+        <a class="px-3 py-2 min-h-[44px] inline-flex items-center" href="#kalkulator">kalkulator</a>
+        <a class="px-3 py-2 min-h-[44px] inline-flex items-center" href="#checklist">checklist</a>
+        <a class="px-3 py-2 min-h-[44px] inline-flex items-center" href="#tanya">tanya</a>
+        <button id="motion-toggle" class="bk-btn secondary !py-2 !px-3 !min-h-[44px] text-sm" type="button" aria-pressed="true">gerak: nyala</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="atas">
+    <!-- poster raksasa -->
+    <section class="bk-noise relative overflow-hidden" aria-labelledby="judul-bidkit">
+      <div class="mx-auto max-w-6xl px-4 pt-10 pb-6 md:pt-16 text-center">
+        <p class="font-accent text-lg md:text-xl" style="color: var(--bk-muted);">buku telepon penawaran freelance — edisi pasar loak</p>
+        <h1 id="judul-bidkit" class="bk-word font-display leading-[0.85] select-none cursor-pointer" style="font-size: clamp(96px, 28vw, 340px); color: var(--bk-accent);" title="klik 5x, ada yang terjadi" aria-label="bidkit">
+          {'bidkit'.split('').map((ch, i) => <span style={`animation-delay: ${i * 90}ms`}>{ch}</span>)}
+        </h1>
+        <p class="mt-4 text-xl md:text-3xl font-bold">
+          <span class="bk-fall" style="animation-delay:.1s">nego</span>{' '}
+          <span class="bk-fall" style="animation-delay:.25s">dulu,</span>{' '}
+          <span class="bk-fall" style="animation-delay:.4s">jangan</span>{' '}
+          <span class="bk-fall" style="animation-delay:.55s">asal</span>{' '}
+          <span class="bk-fall" style="animation-delay:.7s">bid.</span>
+        </p>
+        <p class="mt-3 max-w-xl mx-auto text-base md:text-lg" style="color: var(--bk-muted);">
+          9 template proposal siap kirim, kalkulator harga bersih setelah fee platform, dan checklist portofolio — semua di satu kios, tanpa daftar.
+        </p>
+        <div class="mt-6 flex flex-wrap justify-center gap-3">
+          <a class="bk-btn" href="#kios"><Icon name="tabler:building-store" class="w-5 h-5" /> buka kiosnya</a>
+          <a class="bk-btn secondary" href="#kalkulator"><Icon name="tabler:calculator" class="w-5 h-5" /> hitung harga bersih</a>
+        </div>
+        <p class="mt-4 font-accent text-base" style="color: var(--bk-muted);">scroll ke bawah — kata di atas bakal membesar jadi pintu kios.</p>
+      </div>
+      <!-- 3 band marquee -->
+      <div class="bk-marquee py-2" style="background: var(--bk-accent); color: #fff;" aria-hidden="true">
+        <div class="bk-marquee-track fast font-bold text-sm md:text-base" data-marquee>
+          <span class="px-4">template proposal ✳ kalkulator harga ✳ checklist portofolio ✳ fee projects.co.id 12% ✳ bid gratis &amp; tertutup ✳ escrow ✳ kontes sribu 7 hari ✳&nbsp;</span><span class="px-4">template proposal ✳ kalkulator harga ✳ checklist portofolio ✳ fee projects.co.id 12% ✳ bid gratis &amp; tertutup ✳ escrow ✳ kontes sribu 7 hari ✳&nbsp;</span>
+        </div>
+      </div>
+      <div class="bk-marquee py-2" style="background: var(--bk-pop);" aria-hidden="true">
+        <div class="bk-marquee-track rev font-bold text-sm md:text-base" data-marquee>
+          <span class="px-4">ui/ux ✳ web dev ✳ desain grafis ✳ sopan ✳ to-the-point ✳ portofolio-dulu ✳ revisi 2x ✳ handoff rapi ✳&nbsp;</span><span class="px-4">ui/ux ✳ web dev ✳ desain grafis ✳ sopan ✳ to-the-point ✳ portofolio-dulu ✳ revisi 2x ✳ handoff rapi ✳&nbsp;</span>
+        </div>
+      </div>
+      <div class="bk-marquee py-2" style="background: var(--bk-surface);" aria-hidden="true">
+        <div class="bk-marquee-track font-bold text-sm md:text-base" data-marquee>
+          <span class="px-4">jangan asal bid ✳ baca brief dulu ✳ cek budget klien ✳ hitung fee dulu ✳ portofolio di depan ✳&nbsp;</span><span class="px-4">jangan asal bid ✳ baca brief dulu ✳ cek budget klien ✳ hitung fee dulu ✳ portofolio di depan ✳&nbsp;</span>
+        </div>
+      </div>
+      <div class="mx-auto max-w-6xl px-4 py-3 flex justify-center">
+        <button id="marquee-toggle" class="bk-btn secondary !py-2 !px-3 !min-h-[44px] text-sm" type="button" aria-pressed="false">jeda marquee</button>
+      </div>
+    </section>
+
+    <!-- kios: template + form + preview -->
+    <section id="kios" class="bk-reveal mx-auto max-w-6xl px-4 py-12 md:py-16" aria-labelledby="judul-kios">
+      <h2 id="judul-kios" class="font-display text-5xl md:text-7xl leading-none" style="color: var(--bk-accent);">kios template</h2>
+      <p class="mt-2 max-w-2xl text-base md:text-lg" style="color: var(--bk-muted);">pilih 1 dari 9 entri buku telepon di bawah, isi datamu, proposal langsung jadi. hover kartu — tema kios ikut berubah.</p>
+
+      <div class="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="kategori template">
+        {CATS.map((c, i) => (
+          <button class="bk-tab" type="button" role="tab" data-cat={c.id} aria-selected={i === 0 ? 'true' : 'false'}>{c.label}</button>
+        ))}
+      </div>
+
+      <div id="template-grid" class="mt-6 grid gap-4 md:grid-cols-3">
+        {TEMPLATES.map((t) => (
+          <article class="bk-card p-5 flex flex-col gap-2 template-card" data-cat={t.cat} data-id={t.id} data-theme={t.cat === 'ui/ux' ? 'plum' : t.cat === 'web dev' ? 'lime' : ''} tabindex="0" role="button" aria-pressed="false" aria-label={`pilih template ${t.judul}`}>
+            <p class="font-accent text-sm" style="color: var(--bk-muted);">entri no. {t.id} — {t.gaya}</p>
+            <h3 class="text-xl font-bold leading-tight">{t.judul}</h3>
+            <p class="text-sm" style="color: var(--bk-muted);">{t.deskripsi}</p>
+            <p class="mt-auto pt-3 font-bold text-sm" style="color: var(--bk-accent);">pakai template ini →</p>
+          </article>
+        ))}
+      </div>
+
+      <div class="mt-10 grid gap-6 lg:grid-cols-2">
+        <!-- form -->
+        <div class="bk-card p-5 md:p-6">
+          <h3 class="text-2xl font-bold">isi datamu</h3>
+          <p class="text-sm mt-1" style="color: var(--bk-muted);">tersimpan otomatis di browsermu — refresh pun aman. tidak dikirim ke mana-mana.</p>
+          <form id="bid-form" class="mt-4 grid gap-4" novalidate>
+            <div>
+              <label class="bk-label font-bold text-sm" for="f-nama">nama kamu *</label>
+              <input class="bk-input mt-1" id="f-nama" name="nama" type="text" autocomplete="name" placeholder="cth: rani" required />
+              <p class="bk-err hidden text-sm font-bold mt-1" style="color: var(--bk-accent);" data-err="nama">isi namamu dulu, bang — tanpa nama, klien bingung manggil siapa.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="bk-label font-bold text-sm" for="f-pengalaman">pengalaman (tahun) *</label>
+                <input class="bk-input mt-1" id="f-pengalaman" name="pengalaman" type="number" min="0" max="50" inputmode="numeric" placeholder="cth: 3" required />
+              </div>
+              <div>
+                <label class="bk-label font-bold text-sm" for="f-durasi">durasi (hari kerja) *</label>
+                <input class="bk-input mt-1" id="f-durasi" name="durasi" type="number" min="1" max="365" inputmode="numeric" placeholder="cth: 7" required />
+              </div>
+            </div>
+            <div>
+              <label class="bk-label font-bold text-sm" for="f-keahlian">keahlian / teknologi *</label>
+              <input class="bk-input mt-1" id="f-keahlian" name="keahlian" type="text" placeholder="cth: figma + design system" required />
+            </div>
+            <div>
+              <label class="bk-label font-bold text-sm" for="f-harga">harga penawaran (rp) *</label>
+              <input class="bk-input mt-1" id="f-harga" name="harga" type="number" min="1000" step="1000" inputmode="numeric" placeholder="cth: 1500000" required />
+              <p class="bk-err hidden text-sm font-bold mt-1" style="color: var(--bk-accent);" data-err="harga">isi harga dulu — angka doang, tanpa titik atau "rp".</p>
+            </div>
+            <div>
+              <label class="bk-label font-bold text-sm" for="f-portofolio">link portofolio *</label>
+              <input class="bk-input mt-1" id="f-portofolio" name="portofolio" type="url" inputmode="url" placeholder="https://..." required />
+              <p class="bk-err hidden text-sm font-bold mt-1" style="color: var(--bk-accent);" data-err="portofolio">link portofolio wajib diawali https:// — klien tidak bisa buka link mati.</p>
+            </div>
+            <div>
+              <label class="bk-label font-bold text-sm" for="f-catatan">catatan / ringkas brief klien</label>
+              <textarea class="bk-input mt-1" id="f-catatan" name="catatan" rows="3" placeholder="cth: landing page 5 section + integrasi wa"></textarea>
+            </div>
+            <div>
+              <label class="bk-label font-bold text-sm" for="f-platform">platform tujuan</label>
+              <select class="bk-input mt-1" id="f-platform" name="platform">
+                <option value="projects.co.id">projects.co.id</option>
+                <option value="sribu">sribu</option>
+                <option value="lain">lainnya</option>
+              </select>
+            </div>
+            <p id="form-status" class="text-sm font-bold" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+
+        <!-- preview karcis -->
+        <div class="bk-card bk-ticket p-5 md:p-6 relative" style="background: var(--bk-surface);">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-2xl font-bold">karcis proposalmu</h3>
+              <p id="preview-template-name" class="font-accent text-base" style="color: var(--bk-muted);">belum pilih template — klik 1 kartu di atas.</p>
+            </div>
+            <svg class="bk-stamp shrink-0" width="72" height="72" viewBox="0 0 72 72" role="img" aria-label="stempel sah">
+              <defs><path id="stamp-circle" d="M36,36 m-26,0 a26,26 0 1,1 52,0 a26,26 0 1,1 -52,0" /></defs>
+              <circle cx="36" cy="36" r="34" fill="none" stroke="#c2410c" stroke-width="2" stroke-dasharray="4 3" />
+              <text fill="#c2410c" font-size="10" font-weight="bold" letter-spacing="2"><textPath href="#stamp-circle">• siap kirim • bidkit •</textPath></text>
+              <text x="36" y="41" text-anchor="middle" fill="#c2410c" font-size="15" font-weight="bold">sah</text>
+            </svg>
+          </div>
+          <pre id="proposal-preview" class="mt-4 whitespace-pre-wrap text-sm md:text-base leading-relaxed p-4" style="background: #fff; border: 2px solid var(--bk-ink); font-family: var(--font-body);">pilih template dulu, isi datamu — karcis ini keisi sendiri.</pre>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <button id="copy-proposal" class="bk-btn" type="button"><Icon name="tabler:copy" class="w-5 h-5" /> salin proposal</button>
+            <button id="download-proposal" class="bk-btn secondary" type="button"><Icon name="tabler:download" class="w-5 h-5" /> unduh .txt</button>
+            <button id="copy-link" class="bk-btn secondary" type="button"><Icon name="tabler:link" class="w-5 h-5" /> salin tautan</button>
+          </div>
+          <p id="copy-status" class="mt-2 text-sm font-bold" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- kalkulator -->
+    <section id="kalkulator" class="bk-reveal mx-auto max-w-6xl px-4 py-12 md:py-16" aria-labelledby="judul-kalkulator">
+      <h2 id="judul-kalkulator" class="font-display text-5xl md:text-7xl leading-none" style="color: var(--bk-accent);">kalkulator harga bersih</h2>
+      <p class="mt-2 max-w-2xl text-base md:text-lg" style="color: var(--bk-muted);">masukkan harga yang kamu tawar — lihat berapa yang benar-benar masuk kantong setelah fee platform &amp; biaya transfer. fee projects.co.id 12% itu fakta resmi; fee sribu tidak dipublikasi, jadi isi sendiri.</p>
+
+      <div class="mt-8 grid gap-6 lg:grid-cols-2">
+        <div class="bk-card p-5 md:p-6">
+          <div class="grid gap-4">
+            <div>
+              <label class="bk-label font-bold text-sm" for="c-harga">harga penawaran (rp) *</label>
+              <input class="bk-input mt-1" id="c-harga" type="number" min="1000" step="1000" inputmode="numeric" placeholder="cth: 1500000" />
+            </div>
+            <div>
+              <label class="bk-label font-bold text-sm" for="c-hari">hari kerja</label>
+              <input class="bk-input mt-1" id="c-hari" type="number" min="1" max="365" inputmode="numeric" placeholder="cth: 7" />
+            </div>
+            <div>
+              <label class="bk-label font-bold text-sm" for="c-platform">platform</label>
+              <select class="bk-input mt-1" id="c-platform">
+                <option value="12">projects.co.id — fee 12% (resmi)</option>
+                <option value="manual">sribu — fee tidak dipublikasi, isi manual</option>
+                <option value="0">tanpa platform / langsung — fee 0%</option>
+              </select>
+            </div>
+            <div id="c-fee-manual-wrap" class="hidden">
+              <label class="bk-label font-bold text-sm" for="c-fee-manual">fee sribu menurutmu (%)</label>
+              <input class="bk-input mt-1" id="c-fee-manual" type="number" min="0" max="50" step="0.5" inputmode="decimal" placeholder="cth: 10 — ini tebakanmu, bukan fakta resmi" />
+              <p class="text-sm mt-1" style="color: var(--bk-muted);">angka ini tidak disimpan sebagai fakta — sribu tidak mempublikasikan persen fee-nya.</p>
+            </div>
+            <div>
+              <label class="bk-label font-bold text-sm" for="c-bank">bank penarikan</label>
+              <select class="bk-input mt-1" id="c-bank">
+                <option value="0">bca / bni / mandiri — gratis (resmi)</option>
+                <option value="7500">bank lain — rp7.500 (resmi)</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="bk-label font-bold text-sm" for="c-bmin">budget klien min (rp)</label>
+                <input class="bk-input mt-1" id="c-bmin" type="number" min="0" step="1000" inputmode="numeric" placeholder="opsional" />
+              </div>
+              <div>
+                <label class="bk-label font-bold text-sm" for="c-bmax">budget klien maks (rp)</label>
+                <input class="bk-input mt-1" id="c-bmax" type="number" min="0" step="1000" inputmode="numeric" placeholder="opsional" />
+              </div>
+            </div>
+            <p id="calc-status" class="text-sm font-bold" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="bk-card p-5 md:p-6" style="background: var(--bk-accent-soft);">
+          <h3 class="text-2xl font-bold">hasil hitungan</h3>
+          <dl class="mt-4 grid gap-3 text-base">
+            <div class="flex justify-between gap-3 border-b-2 border-dashed pb-2"><dt>harga penawaran</dt><dd class="font-bold" id="o-harga">—</dd></div>
+            <div class="flex justify-between gap-3 border-b-2 border-dashed pb-2"><dt>fee platform</dt><dd class="font-bold" id="o-fee">—</dd></div>
+            <div class="flex justify-between gap-3 border-b-2 border-dashed pb-2"><dt>biaya transfer</dt><dd class="font-bold" id="o-transfer">—</dd></div>
+            <div class="flex justify-between gap-3 border-b-2 border-dashed pb-2"><dt>terima bersih</dt><dd class="font-bold text-xl" id="o-bersih" style="color: var(--bk-accent2);">—</dd></div>
+            <div class="flex justify-between gap-3 border-b-2 border-dashed pb-2"><dt>per hari kerja</dt><dd class="font-bold" id="o-hari">—</dd></div>
+          </dl>
+          <p id="o-verdict" class="mt-4 font-bold text-lg" role="status">isi harga dulu — hasilnya muncul di sini.</p>
+          <p id="o-saran" class="mt-2 text-sm" style="color: var(--bk-muted);"></p>
+        </div>
+      </div>
+
+      <!-- contoh kisaran: estimasi, bukan fakta -->
+      <div class="bk-card mt-6 p-5 md:p-6">
+        <h3 class="text-2xl font-bold">contoh kisaran harga (estimasi)</h3>
+        <p class="text-sm mt-1" style="color: var(--bk-muted);">angka di bawah ini estimasi dari blog &amp; price list penyedia individual — bukan survei harga pasar, bukan patokan resmi. pakai buat ancang-ancang, lalu sesuaikan dengan skill &amp; kotamu.</p>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full text-left text-sm md:text-base min-w-[520px]">
+            <thead><tr class="border-b-2 border-dashed"><th class="py-2 pr-3">jasa</th><th class="py-2 pr-3">kisaran (estimasi)</th><th class="py-2">sumber estimasi</th></tr></thead>
+            <tbody>
+              <tr class="border-b border-dashed"><td class="py-2 pr-3 font-bold">logo</td><td class="py-2 pr-3">rp300rb – 10jt</td><td class="py-2">blog batambisnis.com</td></tr>
+              <tr class="border-b border-dashed"><td class="py-2 pr-3 font-bold">landing page (desain figma)</td><td class="py-2 pr-3">mulai rp500rb</td><td class="py-2">price list gency 2026</td></tr>
+              <tr class="border-b border-dashed"><td class="py-2 pr-3 font-bold">landing page + deploy</td><td class="py-2 pr-3">rp1jt</td><td class="py-2">price list gency 2026</td></tr>
+              <tr class="border-b border-dashed"><td class="py-2 pr-3 font-bold">website company profile</td><td class="py-2 pr-3">rp2,5jt+</td><td class="py-2">price list gency 2026</td></tr>
+              <tr class="border-b border-dashed"><td class="py-2 pr-3 font-bold">ui/ux penuh + design system</td><td class="py-2 pr-3">rp10 – 30jt</td><td class="py-2">blog majapahit.id</td></tr>
+              <tr class="border-b border-dashed"><td class="py-2 pr-3 font-bold">feed instagram / desain</td><td class="py-2 pr-3">rp50rb</td><td class="py-2">price list gency 2026</td></tr>
+              <tr><td class="py-2 pr-3 font-bold">carousel 5 slide</td><td class="py-2 pr-3">rp150rb</td><td class="py-2">price list gency 2026</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- checklist -->
+    <section id="checklist" class="bk-reveal mx-auto max-w-6xl px-4 py-12 md:py-16" aria-labelledby="judul-checklist">
+      <h2 id="judul-checklist" class="font-display text-5xl md:text-7xl leading-none" style="color: var(--bk-accent);">checklist portofolio</h2>
+      <p class="mt-2 max-w-2xl text-base md:text-lg" style="color: var(--bk-muted);">12 hal yang dicek klien sebelum memilihmu. centang yang sudah beres — progres tersimpan di browsermu.</p>
+      <div class="mt-6 bk-card p-5 md:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="font-bold text-lg"><span id="check-count">0</span> dari 12 beres</p>
+          <div class="flex gap-3">
+            <button id="check-export" class="bk-btn secondary !py-2 !px-3 !min-h-[44px] text-sm" type="button"><Icon name="tabler:download" class="w-5 h-5" /> ekspor json</button>
+            <button id="check-reset" class="bk-btn secondary !py-2 !px-3 !min-h-[44px] text-sm" type="button"><Icon name="tabler:refresh" class="w-5 h-5" /> ulang dari nol</button>
+          </div>
+        </div>
+        <div class="mt-3 h-4 border-2 border-solid" style="border-color: var(--bk-ink); background: #fff;" role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="0" aria-label="progres checklist portofolio" id="check-bar-wrap">
+          <div id="check-bar" class="h-full" style="width: 0%; background: var(--bk-accent2); transition: width 300ms ease;"></div>
+        </div>
+        <ul class="mt-5 grid gap-2 md:grid-cols-2">
+          {CHECKLIST.map((item, i) => (
+            <li>
+              <label class="relative flex items-start gap-3 p-3 cursor-pointer border-2 border-dashed hover:border-solid" style="border-color: var(--bk-line); background: #fff;">
+                <input type="checkbox" class="check-item absolute inset-0 h-full w-full cursor-pointer opacity-0" data-idx={i} />
+                <span class="bk-check-box mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center border-2 border-solid bg-white" style="border-color: var(--bk-ink);" aria-hidden="true">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5" /></svg>
+                </span>
+                <span class="text-sm md:text-base">{i + 1}. {item}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        <p id="check-status" class="mt-3 text-sm font-bold" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- faq -->
+    <section id="tanya" class="bk-reveal mx-auto max-w-6xl px-4 py-12 md:py-16" aria-labelledby="judul-tanya">
+      <h2 id="judul-tanya" class="font-display text-5xl md:text-7xl leading-none" style="color: var(--bk-accent);">tanya si makelar</h2>
+      <p class="mt-2 max-w-2xl text-base md:text-lg" style="color: var(--bk-muted);">jawaban di bawah ini dari dokumen resmi platform — bukan katanya.</p>
+      <div class="mt-6 grid gap-3">
+        {FAQS.map((f) => (
+          <details class="bk-card p-5">
+            <summary class="font-bold text-base md:text-lg cursor-pointer min-h-[44px] flex items-center">{f.q}</summary>
+            <p class="mt-2 text-sm md:text-base" style="color: var(--bk-muted);">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <!-- penutup -->
+    <section class="mx-auto max-w-6xl px-4 pb-16" aria-labelledby="judul-penutup">
+      <div class="bk-card p-6 md:p-8 text-center" style="background: var(--bk-accent-soft);">
+        <h2 id="judul-penutup" class="font-display text-4xl md:text-6xl leading-none" style="color: var(--bk-accent);">bid yang menang itu yang dihitung, bukan yang ditebak.</h2>
+        <p class="mt-3 max-w-xl mx-auto" style="color: var(--bk-muted);">template sudah, harga bersih sudah, checklist sudah. sisanya: kirim bid-nya.</p>
+        <div class="mt-5 flex flex-wrap justify-center gap-3">
+          <a class="bk-btn" href="#kios">balik ke kios</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="w-full border-t-2 border-dashed" style="border-color: var(--bk-line); background: var(--bk-surface);">
+    <div class="mx-auto max-w-6xl px-4 py-8 grid gap-6 md:grid-cols-2 text-sm">
+      <div>
+        <p class="font-display text-3xl" style="color: var(--bk-accent);">bidkit</p>
+        <p class="mt-2" style="color: var(--bk-muted);">kios penawaran freelance — template, kalkulator, checklist. dibuat dengan astro + astrowind. data tersimpan lokal di browsermu, tidak dikirim ke server mana pun.</p>
+        <p class="mt-2 font-accent" style="color: var(--bk-muted);">easter egg: klik kata bidkit di atas 5x.</p>
+      </div>
+      <div>
+        <p class="font-bold">sumber fakta (dicek 28 okt 2026)</p>
+        <ul class="mt-2 grid gap-1 underline">
+          <li><a class="inline-flex items-center min-h-[44px] py-2" href="https://projects.co.id/public/pages/faq_umum" target="_blank" rel="noopener noreferrer">faq umum projects.co.id — sistem bid &amp; escrow</a></li>
+          <li><a class="inline-flex items-center min-h-[44px] py-2" href="https://projects.co.id/public/pages/syarat_layanan" target="_blank" rel="noopener noreferrer">syarat layanan projects.co.id — fee 12% &amp; biaya penarikan</a></li>
+          <li><a class="inline-flex items-center min-h-[44px] py-2" href="https://go.sribu.com/id/syarat-ketentuan/" target="_blank" rel="noopener noreferrer">syarat &amp; ketentuan sribu — kontes 7 hari</a></li>
+        </ul>
+        <p class="mt-3" style="color: var(--bk-muted);">kisaran harga di halaman ini berlabel "estimasi" — dari blog &amp; price list penyedia, bukan harga pasar resmi.</p>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-5 z-50 hidden px-4 py-3 font-bold text-sm border-2 border-solid shadow-[4px_4px_0_#241a33]" style="background: var(--bk-pop); color: var(--bk-ink);" role="status" aria-live="polite"></div>
+
+  <script type="application/json" id="templates-data" set:html={JSON.stringify(TEMPLATES)} />
+
+  <script>
+    // ---------- util ----------
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const rp = (n) => 'rp' + Math.round(n).toLocaleString('id-ID');
+    const store = {
+      read() { try { const v = JSON.parse(localStorage.getItem('bidkit-v1') || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } },
+      write(v) { try { localStorage.setItem('bidkit-v1', JSON.stringify(v)); } catch {} },
+    };
+    const state = Object.assign({ template: '', checks: [] }, store.read());
+    const save = () => store.write(state);
+    let toastTimer;
+    function toast(msg) {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.add('hidden'), 3200);
+    }
+
+    const TEMPLATES = JSON.parse($('#templates-data').textContent || '[]');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const lowPower = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || (navigator.connection && navigator.connection.saveData);
+    if (reduced || lowPower) document.documentElement.setAttribute('data-motion', 'off');
+
+    // ---------- gerak: zoom-through kata raksasa + skew marquee ----------
+    const word = $('#judul-bidkit');
+    let lastY = window.scrollY, lastT = performance.now();
+    function onScroll() {
+      const y = window.scrollY, now = performance.now();
+      const v = Math.abs(y - lastY) / Math.max(now - lastT, 1);
+      lastY = y; lastT = now;
+      if (document.documentElement.getAttribute('data-motion') === 'off') return;
+      const p = Math.min(y / 600, 1);
+      if (word) word.style.transform = `scale(${1 + p * 0.6}) rotate(${-p * 2}deg) translateX(${p * 30}px)`;
+      const skew = Math.min(v * 8, 12);
+      $$('[data-marquee]').forEach((m) => { m.style.transform = `skewX(${skew}deg)`; });
+    }
+    let ticking = false;
+    window.addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(() => { onScroll(); ticking = false; }); ticking = true; } }, { passive: true });
+
+    // reveal sections
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.08 });
+    $$('.bk-reveal').forEach((el) => io.observe(el));
+
+    // ---------- gerak toggle + marquee toggle ----------
+    const motionBtn = $('#motion-toggle');
+    function syncMotionBtn() {
+      const off = document.documentElement.getAttribute('data-motion') === 'off';
+      motionBtn.textContent = off ? 'gerak: mati' : 'gerak: nyala';
+      motionBtn.setAttribute('aria-pressed', String(!off));
+    }
+    motionBtn.addEventListener('click', () => {
+      const off = document.documentElement.getAttribute('data-motion') === 'off';
+      if (off) document.documentElement.removeAttribute('data-motion');
+      else document.documentElement.setAttribute('data-motion', 'off');
+      syncMotionBtn();
+    });
+    syncMotionBtn();
+
+    const mqBtn = $('#marquee-toggle');
+    mqBtn.addEventListener('click', () => {
+      const paused = mqBtn.getAttribute('aria-pressed') === 'true';
+      $$('[data-marquee]').forEach((m) => { m.style.animationPlayState = paused ? '' : 'paused'; });
+      mqBtn.setAttribute('aria-pressed', String(!paused));
+      mqBtn.textContent = paused ? 'jeda marquee' : 'jalanin marquee';
+    });
+
+    // ---------- easter egg: klik kata 5x ----------
+    let eggClicks = 0, eggTimer;
+    word.addEventListener('click', () => {
+      eggClicks++;
+      clearTimeout(eggTimer);
+      eggTimer = setTimeout(() => { eggClicks = 0; }, 2500);
+      if (eggClicks >= 5) { eggClicks = 0; toast('makelarnya lagi ngopi, bentar ya.'); }
+    });
+
+    // ---------- template: tabs + pilih kartu ----------
+    const cards = $$('.template-card');
+    const tabs = $$('.bk-tab');
+    function filterCat(cat) {
+      tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.cat === cat)));
+      cards.forEach((c) => { c.style.display = c.dataset.cat === cat ? '' : 'none'; });
+    }
+    tabs.forEach((t) => t.addEventListener('click', () => filterCat(t.dataset.cat)));
+    tabs.forEach((t, i) => t.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const n = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+        tabs[n].focus(); filterCat(tabs[n].dataset.cat);
+      }
+    }));
+
+    // hover kartu ubah tema halaman (D)
+    cards.forEach((c) => {
+      c.addEventListener('mouseenter', () => { if (c.dataset.theme) document.documentElement.setAttribute('data-theme', c.dataset.theme); });
+      c.addEventListener('mouseleave', () => document.documentElement.removeAttribute('data-theme'));
+      c.addEventListener('focus', () => { if (c.dataset.theme) document.documentElement.setAttribute('data-theme', c.dataset.theme); });
+      c.addEventListener('blur', () => document.documentElement.removeAttribute('data-theme'));
+    });
+
+    function selectTemplate(id, scroll = true) {
+      const t = TEMPLATES.find((x) => x.id === id);
+      if (!t) return;
+      state.template = id; save();
+      cards.forEach((c) => {
+        const on = c.dataset.id === id;
+        c.setAttribute('aria-pressed', String(on));
+        c.style.outline = on ? '3px solid var(--bk-accent)' : '';
+        c.style.background = on ? 'var(--bk-accent-soft)' : '';
+      });
+      $('#preview-template-name').textContent = 'template: ' + t.judul;
+      filterCat(t.cat);
+      renderProposal();
+      if (scroll) $('#bid-form').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    }
+    cards.forEach((c) => {
+      c.addEventListener('click', () => selectTemplate(c.dataset.id));
+      c.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectTemplate(c.dataset.id); } });
+    });
+
+    // ---------- form + proposal ----------
+    const form = $('#bid-form');
+    const FIELDS = ['nama', 'pengalaman', 'durasi', 'keahlian', 'harga', 'portofolio', 'catatan', 'platform'];
+    function formValues() {
+      const v = {};
+      FIELDS.forEach((f) => { const el = form.elements[f]; v[f] = el ? String(el.value).trim() : ''; });
+      return v;
+    }
+    function fillForm(v) {
+      FIELDS.forEach((f) => { const el = form.elements[f]; if (el && v[f] !== undefined) el.value = v[f]; });
+    }
+    function renderProposal() {
+      const t = TEMPLATES.find((x) => x.id === state.template);
+      const pre = $('#proposal-preview');
+      if (!t) { pre.textContent = 'pilih template dulu, isi datamu — karcis ini keisi sendiri.'; return; }
+      const v = formValues();
+      let body = t.body;
+      body = body.replaceAll('{nama}', v.nama || '[isi manual]');
+      body = body.replaceAll('{pengalaman}', v.pengalaman || '[isi manual]');
+      body = body.replaceAll('{durasi}', v.durasi || '[isi manual]');
+      body = body.replaceAll('{keahlian}', v.keahlian || '[isi manual]');
+      body = body.replaceAll('{harga}', v.harga ? Number(v.harga).toLocaleString('id-ID') : '[isi manual]');
+      body = body.replaceAll('{portofolio}', v.portofolio || '[isi manual]');
+      body = body.replaceAll('{catatan}', v.catatan || '[isi manual]');
+      pre.textContent = body;
+    }
+    function validateForm() {
+      const v = formValues();
+      let ok = true;
+      const setErr = (name, bad) => {
+        const p = $(`[data-err="${name}"]`);
+        if (p) p.classList.toggle('hidden', !bad);
+        if (bad) ok = false;
+      };
+      setErr('nama', !v.nama);
+      setErr('harga', !v.harga || Number(v.harga) < 1000);
+      setErr('portofolio', !/^https:\/\//i.test(v.portofolio));
+      $('#form-status').textContent = ok ? '' : 'masih ada yang kurang — cek pesan merah di atas.';
+      return ok;
+    }
+    form.addEventListener('input', () => { state.form = formValues(); save(); renderProposal(); });
+    form.addEventListener('change', () => { state.form = formValues(); save(); renderProposal(); });
+
+    async function copyText(text, okMsg, failMsg) {
+      try { await navigator.clipboard.writeText(text); toast(okMsg); return true; }
+      catch {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); toast(okMsg); return true; }
+        catch { toast(failMsg); return false; }
+        finally { ta.remove(); }
+      }
+    }
+    $('#copy-proposal').addEventListener('click', async () => {
+      if (!state.template) { $('#copy-status').textContent = 'pilih template dulu, baru salin.'; return; }
+      if (!validateForm()) { $('#copy-status').textContent = 'lengkapi dulu yang merah — proposal jangan dikirim setengah.'; return; }
+      const ok = await copyText($('#proposal-preview').textContent, 'proposal tersalin — tinggal tempel di kolom bid.', 'gagal menyalin — izinkan clipboard atau salin manual dari karcis.');
+      $('#copy-status').textContent = ok ? 'tersalin. tempel di projects.co.id / sribu, lalu kirim.' : '';
+    });
+    $('#download-proposal').addEventListener('click', () => {
+      if (!state.template) { $('#copy-status').textContent = 'pilih template dulu, baru unduh.'; return; }
+      const blob = new Blob([$('#proposal-preview').textContent], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `bidkit-${state.template}.txt`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      $('#copy-status').textContent = 'file .txt terunduh.';
+    });
+    $('#copy-link').addEventListener('click', async () => {
+      const v = formValues();
+      const q = new URLSearchParams();
+      if (state.template) q.set('template', state.template);
+      FIELDS.forEach((f) => { if (v[f]) q.set(f, v[f]); });
+      const url = location.origin + location.pathname + '?' + q.toString();
+      await copyText(url, 'tautan tersalin — buka di mana saja, isian ikut kebawa.', 'gagal menyalin tautan.');
+    });
+
+    // ---------- kalkulator ----------
+    const calcIds = ['c-harga', 'c-hari', 'c-platform', 'c-fee-manual', 'c-bank', 'c-bmin', 'c-bmax'];
+    function calc() {
+      const harga = Number($('#c-harga').value || 0);
+      const hari = Number($('#c-hari').value || 0);
+      const plat = $('#c-platform').value;
+      const feeManual = Number($('#c-fee-manual').value || 0);
+      const transfer = Number($('#c-bank').value || 0);
+      const bmin = Number($('#c-bmin').value || 0);
+      const bmax = Number($('#c-bmax').value || 0);
+      $('#c-fee-manual-wrap').classList.toggle('hidden', plat !== 'manual');
+      if (!harga || harga < 1000) {
+        ['#o-harga', '#o-fee', '#o-transfer', '#o-bersih', '#o-hari'].forEach((s) => $(s).textContent = '—');
+        $('#o-verdict').textContent = 'isi harga dulu — hasilnya muncul di sini.';
+        $('#o-saran').textContent = '';
+        $('#calc-status').textContent = '';
+        return;
+      }
+      const pct = plat === 'manual' ? feeManual : Number(plat);
+      const fee = (harga * pct) / 100;
+      const bersih = harga - fee - transfer;
+      $('#o-harga').textContent = rp(harga);
+      $('#o-fee').textContent = `${rp(fee)} (${pct}%)`;
+      $('#o-transfer').textContent = transfer ? rp(transfer) : 'gratis';
+      $('#o-bersih').textContent = rp(bersih);
+      $('#o-hari').textContent = hari > 0 ? rp(bersih / hari) + ' / hari' : '— (isi hari kerja)';
+      let verdict = '', saran = '';
+      if (bmin > 0 && bmax > 0 && bmin <= bmax) {
+        if (harga < bmin) { verdict = 'harga kamu di bawah budget klien — aman masuk, tapi cek lagi: jangan sampai kerja rodi.'; saran = 'coba naikkan sedikit sampai mendekati budget min, atau tambahkan bonus revisi sebagai nilai tambah.'; }
+        else if (harga > bmax) { verdict = 'harga kamu di atas budget maks klien — kemungkinan besar tidak dipilih.'; saran = 'turunkan ke dalam rentang, atau tawar paket lebih kecil (kurangi lingkup) supaya masuk budget.'; }
+        else { verdict = 'harga kamu masuk rentang budget klien — lanjut kirim bid.'; saran = 'tekankan nilai (portofolio + garansi revisi) supaya tidak kalah sama penawar termurah.'; }
+      } else {
+        verdict = bersih > 0 ? 'terima bersih ' + rp(bersih) + ' — kirim bid kalau angkanya sudah cocok di kantongmu.' : 'harga bersihmu nol atau minus — naikkan harga tawaranmu.';
+        saran = plat === 'manual' ? 'fee sribu di atas itu tebakanmu sendiri — cek lagi ke sribu sebelum kirim.' : 'fee dihitung dari tarif resmi platform. cek biaya transfer: bank lain kena rp7.500.';
+      }
+      $('#o-verdict').textContent = verdict;
+      $('#o-saran').textContent = saran;
+      $('#calc-status').textContent = '';
+    }
+    calcIds.forEach((id) => { const el = document.getElementById(id); if (el) el.addEventListener('input', calc); });
+
+    // ---------- checklist ----------
+    const checkInputs = $$('.check-item');
+    function syncChecks() {
+      const done = state.checks.filter(Boolean).length;
+      $('#check-count').textContent = String(done);
+      $('#check-bar').style.width = (done / 12) * 100 + '%';
+      $('#check-bar-wrap').setAttribute('aria-valuenow', String(done));
+      $('#check-status').textContent = done === 12 ? 'semua beres — portofoliomu siap perang.' : done >= 6 ? 'setengah jalan — lanjutkan, klien suka yang rapi.' : '';
+      checkInputs.forEach((el, i) => { el.checked = !!state.checks[i]; });
+    }
+    checkInputs.forEach((el, i) => el.addEventListener('change', () => { state.checks[i] = el.checked; save(); syncChecks(); }));
+    $('#check-export').addEventListener('click', () => {
+      const data = { tool: 'bidkit', versi: 1, tanggal: new Date().toISOString().slice(0, 10), checklist: state.checks.map((c, i) => ({ item: i + 1, beres: !!c })) };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'bidkit-checklist.json'; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      $('#check-status').textContent = 'checklist terunduh sebagai json.';
+    });
+    $('#check-reset').addEventListener('click', () => { state.checks = []; save(); syncChecks(); $('#check-status').textContent = 'checklist diulang dari nol.'; });
+
+    // ---------- deep-link + restore ----------
+    (function init() {
+      const q = new URLSearchParams(location.search);
+      const saved = state.form || {};
+      const fromUrl = {};
+      FIELDS.forEach((f) => { if (q.get(f)) fromUrl[f] = q.get(f); });
+      fillForm(Object.assign({}, saved, fromUrl));
+      if (Array.isArray(state.checks) && state.checks.length !== 12) state.checks = Array(12).fill(false);
+      if (!Array.isArray(state.checks)) state.checks = Array(12).fill(false);
+      syncChecks();
+      const tpl = q.get('template') || state.template;
+      if (tpl) selectTemplate(tpl, false);
+      filterCat('ui/ux');
+      renderProposal();
+      calc();
+      // isi kalkulator dari form kalau ada
+      if (formValues().harga) { $('#c-harga').value = formValues().harga; calc(); }
+      if (formValues().durasi) { $('#c-hari').value = formValues().durasi; calc(); }
+    })();
+  </script>
+</Layout>
